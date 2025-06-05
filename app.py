@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Port Scanner Pro - Fixed Version
-Complete working port scanner with embedded HTML
-"""
-
 import socket
 import threading
 import time
@@ -12,11 +6,10 @@ from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 import os
 
-# Flask app setup
 app = Flask(__name__)
 CORS(app)
 
-# Global variables for tracking scans
+
 active_scans = {}
 
 def scan_port(ip, port):
@@ -48,7 +41,7 @@ def scan_port(ip, port):
             'message': f"Couldn't connect to {ip}:{port} - {err}"
         }
 
-# HTML Template (embedded to avoid file issues)
+
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -422,7 +415,7 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
-# Routes
+
 @app.route('/')
 def index():
     """Serve the main HTML page"""
@@ -437,7 +430,7 @@ def start_scan():
         start_port = int(data.get('start_port', 1))
         end_port = int(data.get('end_port', 1024))
         
-        # Validate input
+       
         if not ip:
             return jsonify({'error': 'IP address is required'}), 400
         
@@ -447,10 +440,8 @@ def start_scan():
         if start_port < 1 or end_port > 65535:
             return jsonify({'error': 'Port range must be 1-65535'}), 400
         
-        # Generate scan ID
         scan_id = f"{ip}_{start_port}_{end_port}_{int(time.time())}"
         
-        # Initialize scan tracking
         active_scans[scan_id] = {
             'ip': ip,
             'start_port': start_port,
@@ -462,20 +453,18 @@ def start_scan():
             'started_at': time.time()
         }
         
-        # Start scan in background thread
         def run_scan():
             for port in range(start_port, end_port + 1):
                 if scan_id not in active_scans:
-                    break  # Scan was cancelled
+                    break  
                     
                 result = scan_port(ip, port)
                 active_scans[scan_id]['results'].append(result)
                 active_scans[scan_id]['progress'] = port - start_port + 1
                 
-                # Small delay to prevent overwhelming
                 time.sleep(0.05)
             
-            # Mark as complete
+           
             if scan_id in active_scans:
                 active_scans[scan_id]['completed'] = True
         
@@ -490,7 +479,7 @@ def start_scan():
         })
         
     except Exception as e:
-        print(f"Error in start_scan: {e}")  # Debug print
+        print(f"Error in start_scan: {e}")  
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scan/<scan_id>/progress', methods=['GET'])
@@ -501,7 +490,7 @@ def get_scan_progress(scan_id):
     
     scan_data = active_scans[scan_id]
     
-    # Count results by status
+    
     open_ports = len([r for r in scan_data['results'] if r['status'] == 'open'])
     closed_ports = len([r for r in scan_data['results'] if r['status'] == 'closed'])
     error_ports = len([r for r in scan_data['results'] if r['status'] == 'error'])
@@ -521,7 +510,6 @@ def get_scan_progress(scan_id):
         }
     })
 
-# Debug route to test if server is working
 @app.route('/test')
 def test():
     """Test route to verify server is working"""
@@ -537,5 +525,4 @@ if __name__ == "__main__":
     print("🔧 Test API at: http://localhost:5000/test")
     print("⏹️  Press Ctrl+C to stop")
     
-    # Run with debug mode for better error messages
     app.run(debug=True, host='0.0.0.0', port=5000)
